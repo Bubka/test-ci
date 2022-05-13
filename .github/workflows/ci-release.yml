@@ -1,0 +1,15 @@
+name: ci-release
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Get release tag
+        run: echo "version is ${{ github.ref_name }}"
