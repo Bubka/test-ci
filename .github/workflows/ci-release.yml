@@ -11,5 +11,21 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name }}
 
-      - name: Get release tag
-        run: echo "version is ${{ github.ref_name }}"
+      - name: Set Versions
+        uses: actions/github-script@v4
+        id: set_version
+        with:
+          script: |
+            const tag = context.ref_name
+            const no_v = tag.replace('v', '')
+            const dash_index = no_v.lastIndexOf('-')
+            const no_dash = (dash_index > -1) ?  no_v.substring(0, dash_index) : no_v
+            core.setOutput('tag', tag)
+            core.setOutput('no-v', no_v)
+            core.setOutput('no-dash', no_dash)
+
+      - name: Get version
+        run: |
+          echo "version is ${{steps.set_version.outputs.tag}}"
+          echo "version no-v is ${{steps.set_version.outputs.no-v}}"
+          echo "version no-dash is ${{steps.set_version.outputs.no-dash}}"
