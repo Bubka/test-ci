@@ -27,3 +27,4 @@ jobs:
         run: |
           echo "version is ${{steps.set_version.outputs.tag}}"
           echo "version no-v is ${{steps.set_version.outputs.no-v}}"
+          
