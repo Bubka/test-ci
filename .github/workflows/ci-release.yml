@@ -22,9 +22,17 @@ jobs:
             core.setOutput('no-v', no_v)
 
       - name: Get version
-        # We do not want to echo a prerelease
-        if: ${{ github.event.release.prerelease == false }}
         run: |
           echo "version is ${{steps.set_version.outputs.tag}}"
           echo "version no-v is ${{steps.set_version.outputs.no-v}}"
+
+      - name: Check prerelease
+        if: ${{ github.event.release.prerelease == true }}
+        run: |
+          echo "This is a prerelease"
+
+      - name: Check latest release
+        if: ${{ github.event.release.prerelease == false }}
+        run: |
+          echo "This is the latest release"
           
