@@ -7,7 +7,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.release.tag_name }}
 
@@ -22,6 +22,8 @@ jobs:
             core.setOutput('no-v', no_v)
 
       - name: Get version
+        # We do not want to echo a prerelease
+        if: ${{ github.event.release.prerelease == false }}
         run: |
           echo "version is ${{steps.set_version.outputs.tag}}"
           echo "version no-v is ${{steps.set_version.outputs.no-v}}"
