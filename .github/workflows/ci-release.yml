@@ -11,43 +11,60 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name }}
           
-      - name: Parse version from tag
-        id: version
-        uses: release-kit/semver@v2
-
       - name: Set tags
         uses: actions/github-script@v9
         id: set_tags
         with:
           script: |
-            const tag = context.ref.substring(10)
-            const version = tag.replace('v', '')
-            const [major, minor, patch] = version.split('.')
-            core.setOutput('version', version)
-            core.setOutput('major', major)
-            core.setOutput('minor', `${major}.${minor}`)
-            core.setOutput('major_minor_patch', version)
-          
+            const tagVersion = context.ref.substring(10);
+            const version = tagVersion.replace(/^v/, '');
+            const semverRegex =
+              /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+            const match = version.match(semverRegex)
+            if (!match) {
+              core.setFailed(`Invalid SemVer version: "${tagVersion}"`);
+              return;
+            }
+            const [, major, minor, patch, prerelease, build] = match;
+            let label = '';
+            if (prerelease) {
+              label += `-${prerelease}`;
+            }
+            if (build) {
+              label += `+${build}`;
+            }
+            core.setOutput('version', version);
+            core.setOutput('major', major);
+            core.setOutput('minor', minor);
+            core.setOutput('patch', patch);
+            core.setOutput('prerelease', prerelease);
+            core.setOutput('build', build);
+            core.setOutput('label', label);
+            core.setOutput('major_minor', `${major}.${minor}`);
+            core.setOutput('major_minor_patch', `${major}.${minor}.${patch}`);
+            
       - name: Get parts
         run: |
           echo "version full is ${{steps.set_tags.outputs.version}}"
-          echo "version full is ${{steps.version.outputs.full}}"
-          echo "-------------------"
           echo "major version is ${{steps.set_tags.outputs.major}}"
-          echo "major version is ${{steps.version.outputs.major}}"
-          echo "-------------------"
           echo "minor version is ${{steps.set_tags.outputs.minor}}"
-          echo "minor version is ${{steps.version.outputs.major}}.${{steps.version.outputs.minor}}"
+          echo "patch version is ${{steps.set_tags.outputs.patch}}"
+          echo "prerelease version is ${{steps.set_tags.outputs.prerelease}}"
+          echo "build version is ${{steps.set_tags.outputs.build}}"
+          echo "label is ${{steps.set_tags.outputs.label}}"
+          echo "major_minor version is ${{steps.set_tags.outputs.major_minor}}"
+          echo "major_minor_patch version is ${{steps.set_tags.outputs.major_minor_patch}}"
           
       - name: Check prerelease
-        if: ${{ steps.version.outputs.prerelease != '' || steps.version.outputs.build != '' || github.event.release.prerelease == true }}
+        if: ${{ steps.set_tags.outputs.label != '' || github.event.release.prerelease == true }}
         run: |
-          echo "prerelease is ${{steps.version.outputs.prerelease}}"
-          echo "build is ${{steps.version.outputs.build}}"
+          echo "prerelease is ${{steps.set_tags.outputs.prerelease}}"
+          echo "build is ${{steps.set_tags.outputs.build}}"
+          echo "label is ${{steps.set_tags.outputs.label}}"
           echo "This is a prerelease"
 
       - name: Check latest release
-        if: ${{ steps.version.outputs.prerelease == '' && steps.version.outputs.build == '' && github.event.release.prerelease == false }}
+        if: ${{ steps.set_tags.outputs.label == '' && github.event.release.prerelease == false }}
         run: |
           echo "This is the stable release"
           
